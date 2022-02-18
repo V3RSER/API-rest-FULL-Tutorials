@@ -7,9 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8080")
 @RestController
@@ -48,7 +46,6 @@ public class TutorialController {
         }
     }
 
-
     @PostMapping("/tutorials")
     public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial) {
         try {
@@ -59,8 +56,8 @@ public class TutorialController {
         }
     }
 
-    @PutMapping("/tutorials/{id}")
-    public ResponseEntity<Tutorial> updateTutorial(@PathVariable("id") long id, @RequestBody Tutorial tutorial) {
+    @PutMapping("/tutorials/id/{id}")
+    public ResponseEntity<Tutorial> updateTutorialByID(@PathVariable("id") long id, @RequestBody Tutorial tutorial) {
         Optional<Tutorial> tutorialData = tutorialRepository.findById(id);
 
         if (tutorialData.isPresent()) {
@@ -71,6 +68,34 @@ public class TutorialController {
             return new ResponseEntity<>(tutorialRepository.save(_tutorial), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PutMapping("/tutorials/title/{title}")
+    public ResponseEntity<Tutorial[]> updateTutorialByTitle(@PathVariable("title") String title, @RequestBody Tutorial tutorial) {
+
+        try {
+            // Busca los tutoriales que empiecen por el títutlo recibido
+            List<Tutorial> tutorialsByTitle = tutorialRepository.findByTitleContaining(title);
+            //Si no coincide con exactamente con el título recibido, se descarta
+            System.out.println("antes: " + tutorialsByTitle);
+            tutorialsByTitle.removeIf(tuto -> !Objects.equals(tuto.getTitle().toLowerCase(), title.toLowerCase()));
+            if (tutorialsByTitle.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            System.out.println("después: " + tutorialsByTitle);
+            Tutorial[] tutorialsSave = new Tutorial[tutorialsByTitle.size()];
+
+            for (int i = tutorialsByTitle.size() - 1; i >= 0; i--) {
+                Tutorial _tutorial = tutorialsByTitle.get(i);
+                _tutorial.setTitle(tutorial.getTitle());
+                _tutorial.setDescription(tutorial.getDescription());
+                _tutorial.setPublished(tutorial.isPublished());
+                tutorialsSave[i] = tutorialRepository.save(_tutorial);
+            }
+            return new ResponseEntity<>(tutorialsSave, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
     }
 
@@ -88,9 +113,17 @@ public class TutorialController {
     @DeleteMapping("/tutorials/title/{title}")
     public ResponseEntity<String> deleteTutorialByTitle(@PathVariable("title") String title) {
         try {
+            // Busca los tutoriales que empiecen por el títutlo recibido
             List<Tutorial> tutorialsByTitle = tutorialRepository.findByTitleContaining(title);
+            //Si no coincide con exactamente con el título recibido, se descarta
+            System.out.println("antes: " + tutorialsByTitle);
+            tutorialsByTitle.removeIf(tuto -> !Objects.equals(tuto.getTitle().toLowerCase(), title.toLowerCase()));
+            if (tutorialsByTitle.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            
             tutorialsByTitle.forEach(tutorial -> tutorialRepository.deleteById(tutorial.getId()));
-            return new ResponseEntity<>("Tutorials DELETE!! ", HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>("Tutorials DELETE!! ", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -104,7 +137,6 @@ public class TutorialController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
-
     }
 
     @GetMapping("/tutorials/published")
