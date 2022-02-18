@@ -79,12 +79,10 @@ public class TutorialController {
             // Busca los tutoriales que empiecen por el títutlo recibido
             List<Tutorial> tutorialsByTitle = tutorialRepository.findByTitleContaining(title);
             //Si no coincide con exactamente con el título recibido, se descarta
-            System.out.println("antes: " + tutorialsByTitle);
             tutorialsByTitle.removeIf(tuto -> !Objects.equals(tuto.getTitle().toLowerCase(), title.toLowerCase()));
             if (tutorialsByTitle.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            System.out.println("después: " + tutorialsByTitle);
             Tutorial[] tutorialsSave = new Tutorial[tutorialsByTitle.size()];
 
             for (int i = tutorialsByTitle.size() - 1; i >= 0; i--) {
@@ -118,7 +116,6 @@ public class TutorialController {
             // Busca los tutoriales que empiecen por el títutlo recibido
             List<Tutorial> tutorialsByTitle = tutorialRepository.findByTitleContaining(title);
             //Si no coincide con exactamente con el título recibido, se descarta
-            System.out.println("antes: " + tutorialsByTitle);
             tutorialsByTitle.removeIf(tuto -> !Objects.equals(tuto.getTitle().toLowerCase(), title.toLowerCase()));
             if (tutorialsByTitle.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -155,4 +152,17 @@ public class TutorialController {
         }
     }
 
+    @GetMapping("/tutorials/query")
+    public ResponseEntity<List<Tutorial>> findByPrice(@RequestParam("price") double price) {
+        try {
+            List<Tutorial> tutorials = tutorialRepository.findByPrice(price);
+
+            if (tutorials.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(tutorials, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+        }
+    }
 }
